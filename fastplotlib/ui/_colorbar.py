@@ -107,6 +107,9 @@ class ImguiColorbar(ImguiContainer):
         self._hovering_handle = False
         self._resize_cursor_set = False
 
+        # "vmin" or "vmax" while its label has been double-clicked and a value is being typed in, otherwise None
+        self._editing_attr = None
+
         # GPU resources, created in _fpl_add_hook() once the figure and its device are known
         self._device = None
         self._bar_texture = None
@@ -655,20 +658,51 @@ class ImguiColorbar(ImguiContainer):
         # current vmax above its line, vmin below its line
         y_vmax = self._value_to_y(self.vmax, bar_y, bar_h)
         y_vmin = self._value_to_y(self.vmin, bar_y, bar_h)
-        self._text_right(
-            draw_list,
-            f"{self.vmax:.4g}",
-            x_right,
-            y_vmax - imgui.get_text_line_height(),
+        self._draw_value(
+            draw_list, "vmax", x_right, y_vmax - imgui.get_text_line_height()
         )
-        self._text_right(draw_list, f"{self.vmin:.4g}", x_right, y_vmin)
+        self._draw_value(draw_list, "vmin", x_right, y_vmin)
 
-    def _text_right(self, draw_list, text: str, x_right: float, y: float):
-        """draw text right-aligned so it ends at x_right"""
-        tw = imgui.calc_text_size(text).x
-        draw_list.add_text(
-            (x_right - tw, y), imgui.get_color_u32(imgui.Col_.text), text
-        )
+    def _draw_value(self, draw_list, attr: str, x_right: float, y: float):
+        """draw the current vmin or vmax right-aligned so it ends at x_right, double-click it to type in a value"""
+        if self._editing_attr != attr:
+            text = f"{getattr(self, attr):.4g}"
+            tw = imgui.calc_text_size(text).x
+            draw_list.add_text(
+                (x_right - tw, y), imgui.get_color_u32(imgui.Col_.text), text
+            )
+
+            imgui.set_cursor_screen_pos((x_right - tw, y))
+            imgui.invisible_button(
+                f"##{attr}_label", (tw, imgui.get_text_line_height())
+            )
+            if imgui.is_item_hovered() and imgui.is_mouse_double_clicked(0):
+                # replace the label with a text field, focused so the value can be typed in right away
+                self._editing_attr = attr
+                imgui.set_keyboard_focus_here()
+
+        if self._editing_attr == attr:
+            # the text field spans from the left of the window to x_right, one text line tall like the label
+            x_left = imgui.get_window_pos().x + imgui.get_cursor_start_pos().x
+            imgui.set_cursor_screen_pos((x_left, y))
+            imgui.set_next_item_width(x_right - x_left)
+            imgui.push_style_var(
+                imgui.StyleVar_.frame_padding, (imgui.get_style().frame_padding.x, 0.0)
+            )
+            entered, value = imgui.input_double(
+                f"##{attr}_input",
+                getattr(self, attr),
+                format="%.4g",
+                flags=imgui.InputTextFlags_.enter_returns_true,
+            )
+            imgui.pop_style_var()
+
+            if entered:
+                setattr(self, attr, value)
+
+            # enter, escape, or clicking elsewhere closes the text field
+            if imgui.is_item_deactivated():
+                self._editing_attr = None
 
     def _draw_bar_handles(self, bar_x, bar_y, bar_w, bar_h):
         draw_list = imgui.get_window_draw_list()
@@ -676,7 +710,6 @@ class ImguiColorbar(ImguiContainer):
         # yellow highlight when a handle is hovered/dragged, like the region lines
         yellow = imgui.color_convert_float4_to_u32((1.0, 1.0, 0.0, 1.0))
         outline = imgui.color_convert_float4_to_u32((0.0, 0.0, 0.0, 1.0))
-        text_color = imgui.get_color_u32(imgui.Col_.text)
 
         axis_min, axis_max = self._axis_range()
         span = axis_max - axis_min
@@ -741,10 +774,8 @@ class ImguiColorbar(ImguiContainer):
             )
 
             # current value to the left of the bar, vmax above its handle and vmin below
-            text = f"{getattr(self, attr):.4g}"
             ty = y - imgui.get_text_line_height() if attr == "vmax" else y
-            tw = imgui.calc_text_size(text).x
-            draw_list.add_text((x_left - 3 - tw, ty), text_color, text)
+            self._draw_value(draw_list, attr, x_left - 3, ty)
 
     def _draw_popup(self):
         if self._has_gamma:
