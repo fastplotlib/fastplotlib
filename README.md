@@ -144,7 +144,7 @@ You can also take a look at our [**Roadmap for 2026**](https://github.com/fastpl
 
 A special thanks to all of the `pygfx` developers and the amazing work they have done. 
 
-# Sponsors and Scientific collaborators
+# Sponsors and Scientific Collaborators
 
 Fastplotlib is free and open source. We would like to thank the following institutions for helping to support fastplotlib over the past few years.
 
