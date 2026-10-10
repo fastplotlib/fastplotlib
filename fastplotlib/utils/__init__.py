@@ -11,3 +11,4 @@ from .protocols import (
     FutureProtocol,
     CudaArrayProtocol,
 )
+from ._video_writer import VideoWriter
