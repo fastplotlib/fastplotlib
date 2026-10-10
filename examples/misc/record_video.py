@@ -11,7 +11,7 @@ unless a ``path`` is given. Recording requires ``av``: ``pip install av``
 """
 
 # test_example = false
-# sphinx_gallery_pygfx_docs = 'animate'
+# sphinx_gallery_pygfx_docs = 'code'
 
 import fastplotlib as fpl
 import numpy as np
