@@ -1,4 +1,4 @@
-from time import sleep
+from time import sleep, perf_counter
 
 import av
 import numpy as np
@@ -59,10 +59,13 @@ def test_video_writer_timestamps(tmp_path):
     path = tmp_path / "test.mp4"
 
     # variable frame rate, the time between frames should be preserved
+    # sleep() is not accurate on CI runners, so the actual time of each frame is measured
     delays = [0.02] * 5 + [0.1] * 5
+    frame_times = list()
 
     writer = VideoWriter(path)
     for frame, delay in zip(make_frames(len(delays), 48, 64), delays):
+        frame_times.append(perf_counter())
         writer.add_frame(frame)
         sleep(delay)
     writer.close()
@@ -73,9 +76,9 @@ def test_video_writer_timestamps(tmp_path):
     # timestamps are strictly increasing
     assert np.all(np.diff(times) > 0)
 
-    # first frame is at 0, last frame is at the sum of all delays except the last one
-    assert times[0] == 0
-    np.testing.assert_allclose(times[-1], sum(delays[:-1]), atol=0.05)
+    # timestamps match when each frame was added, relative to the first frame
+    expected = np.array(frame_times) - frame_times[0]
+    np.testing.assert_allclose(times, expected, atol=0.01)
 
 
 @pytest.mark.parametrize("size", [(48, 64), (47, 64), (48, 65), (47, 65)])
