@@ -116,6 +116,54 @@ def test_video_writer_no_frames(tmp_path):
     assert not path.exists()
 
 
+def test_video_writer_default_name(tmp_path):
+    writer = VideoWriter(directory=tmp_path)
+
+    assert writer.path.parent == tmp_path
+    assert writer.path.name.startswith("fastplotlib_")
+    assert writer.path.suffix == ".mp4"
+
+    writer.close()
+
+
+@pytest.mark.parametrize("path", ["clip.mp4", "sub/clip.mp4", "nested/sub/clip.mp4"])
+def test_video_writer_relative_path(tmp_path, path):
+    # relative paths are inside the directory, folders are created if they don't exist
+    directory = tmp_path / "recordings"
+
+    writer = VideoWriter(path, directory=directory)
+    assert writer.path == directory / path
+    assert writer.path.parent.is_dir()
+
+    writer.close()
+
+
+def test_video_writer_absolute_path(tmp_path):
+    # absolute paths are used as is, directory is ignored
+    path = tmp_path / "other" / "clip.mp4"
+
+    writer = VideoWriter(path, directory=tmp_path / "recordings")
+    assert writer.path == path
+    assert path.parent.is_dir()
+    assert not (tmp_path / "recordings").exists()
+
+    writer.close()
+
+
+def test_video_writer_home_directory(tmp_path, monkeypatch):
+    # "~" is expanded on all OS, HOME is used on unix and USERPROFILE on windows
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+
+    writer = VideoWriter("clip.mp4", directory="~/recordings")
+    assert writer.path == tmp_path / "recordings" / "clip.mp4"
+    writer.close()
+
+    writer = VideoWriter("~/clip.mp4", directory=tmp_path / "recordings")
+    assert writer.path == tmp_path / "clip.mp4"
+    writer.close()
+
+
 def test_record_figure(tmp_path):
     path = tmp_path / "test.mp4"
     fig = make_figure()
@@ -223,3 +271,50 @@ def test_record_includes_imgui(tmp_path):
         - snapshot[toolbar_rows].astype(np.int16)
     )
     assert difference.max() > 100
+
+
+def test_record_default_directory(tmp_path, monkeypatch):
+    # default directory is ~/fastplotlib-recordings, point home at tmp_path so nothing is written to the real home
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+
+    assert fpl.Figure.config.start_recording.directory == "~/fastplotlib-recordings"
+
+    fig = make_figure()
+
+    fig.start_recording()
+    fig.canvas.draw()
+    fig.stop_recording()
+
+    files = list((tmp_path / "fastplotlib-recordings").glob("fastplotlib_*.mp4"))
+    assert len(files) == 1
+
+
+def test_record_config_directory(tmp_path):
+    fig = make_figure()
+
+    default = fpl.Figure.config.start_recording.directory
+    fpl.Figure.config.start_recording.directory = tmp_path / "recordings"
+
+    try:
+        # directory from config is used
+        fig.start_recording("clip.mp4")
+        fig.canvas.draw()
+        fig.stop_recording()
+        assert (tmp_path / "recordings" / "clip.mp4").exists()
+
+        # explicitly passed directory takes priority over config
+        fig.start_recording("clip.mp4", directory=tmp_path / "other")
+        fig.canvas.draw()
+        fig.stop_recording()
+        assert (tmp_path / "other" / "clip.mp4").exists()
+
+        # absolute path takes priority over config
+        fig.start_recording(tmp_path / "absolute.mp4")
+        fig.canvas.draw()
+        fig.stop_recording()
+        assert (tmp_path / "absolute.mp4").exists()
+
+    finally:
+        # reset config so other tests are not affected
+        fpl.Figure.config.start_recording.directory = default

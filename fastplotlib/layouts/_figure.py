@@ -620,9 +620,11 @@ class Figure:
 
         self._video_writer.add_frame(frame)
 
+    @global_config.declare("directory")
     def start_recording(
         self,
         path: str | Path = None,
+        directory: str | Path = "~/fastplotlib-recordings",
         codec: str = "libx264",
         pixel_format: str = "yuv420p",
         options: dict = None,
@@ -632,7 +634,11 @@ class Figure:
                 "Figure is already being recorded, call stop_recording() first"
             )
         self._video_writer = VideoWriter(
-            path=path, codec=codec, pixel_format=pixel_format, options=options
+            path=path,
+            directory=directory,
+            codec=codec,
+            pixel_format=pixel_format,
+            options=options,
         )
 
     def stop_recording(self):

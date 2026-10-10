@@ -21,6 +21,7 @@ class VideoWriter:
     def __init__(
         self,
         path: str | Path = None,
+        directory: str | Path = None,
         codec: str = "libx264",
         pixel_format: str = "yuv420p",
         options: dict = None,
@@ -50,10 +51,17 @@ class VideoWriter:
                 "https://github.com/PyAV-Org/PyAV"
             )
 
-        if path is None:
-            path = Path.cwd() / f"fastplotlib_{datetime.now():%Y-%m-%d_%H-%M-%S}.mp4"
+        if directory is None:
+            directory = Path.cwd()
 
-        self._path = Path(path)
+        if path is None:
+            path = f"fastplotlib_{datetime.now():%Y-%m-%d_%H-%M-%S}.mp4"
+
+            # joining with an absolute path gives the absolute path, so it is used as is
+        path = Path(directory).expanduser() / Path(path).expanduser()
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        self._path = path
 
         if options is None:
             # high quality defaults for sharp lines and text
