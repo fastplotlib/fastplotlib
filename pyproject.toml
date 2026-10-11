@@ -58,11 +58,13 @@ tests = [
     "scikit-learn",
     "tqdm",
     "ome-zarr",
+    "av"
 ]
+video = ["av"]
 # imgui-bundle 1.92.900 removed `ImDrawData.cmd_lists_count`, which the released wgpu imgui
 # backend still uses. Remove the upper bound once a wgpu release has the fix.
 imgui = ["wgpu[imgui]", "imgui-bundle<1.92.900"]
-dev = ["fastplotlib[docs,notebook,tests,imgui]"]
+dev = ["fastplotlib[docs,notebook,tests,imgui,video]"]
 
 [project.urls]
 Homepage = "https://www.fastplotlib.org/"

@@ -20,7 +20,7 @@ from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
 from ..graphics import ImageGraphic, ImageYUVGraphic
-from ..utils import global_config
+from ..utils import global_config, VideoWriter
 
 
 @global_config.register
@@ -144,6 +144,12 @@ class Figure:
 
         self._canvas = canvas
         self._renderer = renderer
+
+        # makes sure that if recording, imgui overlay can be copied and included in outputted frames
+        if isinstance(canvas, BaseRenderCanvas):
+            context = canvas.get_context("wgpu")
+            config = context.get_configuration()
+            context.configure(**{**config, "usage": "RENDER_ATTACHMENT|COPY_SRC"})
 
         # underlay render pass
         self._underlay_camera = ScreenSpaceCamera()
@@ -481,6 +487,8 @@ class Figure:
 
         self._pause_render = False
 
+        self._video_writer: VideoWriter | None = None
+
     @property
     def shape(self) -> list[tuple[int, int, int, int]] | tuple[int, int]:
         """Only for grid layouts of subplots: [n_rows, n_cols]"""
@@ -542,6 +550,10 @@ class Figure:
         """Returns a dictionary of 'pre' and 'post' animation functions."""
         return {"pre": self._animate_funcs_pre, "post": self._animate_funcs_post}
 
+    @property
+    def recording(self) -> bool:
+        return self._video_writer is not None
+
     def _render(self, draw=True):
         # draw the underlay planes
         self.renderer.render(self._underlay_scene, self._underlay_camera, flush=False)
@@ -572,7 +584,71 @@ class Figure:
 
     def _start_render(self):
         """start render cycle"""
-        self.canvas.request_draw(self._render)
+        self.canvas.request_draw(self._draw_frame)
+
+    def _draw_frame(self):
+        """draw function given to the canvas, renders the figure then captures the frame if recording"""
+        self._render()
+
+        # capture after _render() so that imgui is included, and before the canvas presents
+        if self.recording:
+            self._capture_frame()
+
+    def _capture_frame(self):
+        """copy the final canvas frame, which includes all imgui UI, from the GPU"""
+        texture = self.canvas.get_context("wgpu").get_current_texture()
+        width, height, _ = texture.size
+
+        # canvas was resized, the video size is fixed by the first frame so end the recording
+        if self._video_writer.size not in (None, (height, width)):
+            warn("Canvas was resized, recording has been stopped and saved")
+            self.stop_recording()
+            return
+
+        data = self.renderer.device.queue.read_texture(
+            {"texture": texture, "mip_level": 0, "origin": (0, 0, 0)},
+            {"offset": 0, "bytes_per_row": 4 * width},
+            (width, height, 1),
+        )
+        frame = np.frombuffer(data, dtype=np.uint8).reshape(height, width, 4)
+
+        # to rgb, drop alpha
+        if texture.format.startswith("bgra"):
+            frame = frame[..., [2, 1, 0]]
+        else:
+            frame = frame[..., :3]
+
+        self._video_writer.add_frame(frame)
+
+    @global_config.declare("directory")
+    def start_recording(
+        self,
+        path: str | Path = None,
+        directory: str | Path = "~/fastplotlib-recordings",
+        codec: str = "libx264",
+        pixel_format: str = "yuv420p",
+        options: dict = None,
+    ):
+        if self.recording:
+            raise RuntimeError(
+                "Figure is already being recorded, call stop_recording() first"
+            )
+        self._video_writer = VideoWriter(
+            path=path,
+            directory=directory,
+            codec=codec,
+            pixel_format=pixel_format,
+            options=options,
+        )
+
+    def stop_recording(self):
+        if not self.recording:
+            return
+
+        writer = self._video_writer
+        # set to None first so no more frames are captured while the file is finished
+        self._video_writer = None
+        writer.close()
 
     @global_config.declare(
         "autoscale",
@@ -688,6 +764,8 @@ class Figure:
         return self._output
 
     def close(self):
+        if self._recording:
+            self.stop_recording()
         self._output.close()
         if self._sidecar:
             self._sidecar.close()

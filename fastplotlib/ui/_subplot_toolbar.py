@@ -71,3 +71,24 @@ class SubplotToolbar(ImguiWindow):
             )
             if imgui.is_item_hovered(0):
                 imgui.set_tooltip("maintain aspect")
+
+            # record button
+            recording = self._figure.recording
+            if recording:
+                # red stop icon if recording
+                imgui.push_style_color(imgui.Col_.text, (1.0, 0.2, 0.2, 1.0))
+                icon = fa.ICON_FA_STOP
+            else:
+                icon = fa.ICON_FA_VIDEO
+
+            if imgui.button(icon):
+                if recording:
+                    self._figure.stop_recording()
+                else:
+                    self._figure.start_recording()
+
+            if recording:
+                imgui.pop_style_color()
+
+            if imgui.is_item_hovered(0):
+                imgui.set_tooltip("stop recording" if recording else "record video")
