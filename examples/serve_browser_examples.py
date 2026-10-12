@@ -35,8 +35,11 @@ import fastplotlib
 wgpu_wheel = "wgpu-0.32.0-py3-none-any.whl"
 pygfx_wheel = "pygfx-0.17.0-py3-none-any.whl"
 
+rendercanvas_wheel = "rendercanvas-2.7.2-py3-none-any.whl" # still moved manually ...
+
+
 # the pygfx wheel will be listed after this. it might be possible to still get deps from pyproject.toml
-fpl_deps = [wgpu_wheel, pygfx_wheel, "imgui-bundle", "hsluv", "pylinalg", "jinja2", "httpx", "trimesh", "gltflib", "imageio"]
+fpl_deps = [rendercanvas_wheel, wgpu_wheel, pygfx_wheel, "imgui-bundle", "hsluv", "pylinalg", "jinja2", "httpx", "trimesh", "gltflib", "imageio"]
 
 root = Path(__file__).parent.parent.absolute()
 
