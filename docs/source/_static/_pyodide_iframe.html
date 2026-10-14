@@ -38,11 +38,12 @@
                 await pyodide.loadPackage("micropip");
                 const micropip = pyodide.pyimport("micropip");
                 await micropip.install([
-                    'https://wgpu-py--753.org.readthedocs.build/en/753/_static/wgpu-0.32.0-py3-none-any.whl',
+                    'https://rendercanvas--258.org.readthedocs.build/258/_static/rendercanvas-2.7.2-py3-none-any.whl', // fixes to run_sync for right click menus
+                    'https://wgpu-py--753.org.readthedocs.build/en/753/_static/wgpu-0.32.0-py3-none-any.whl', // WIP pyodide.ffi bindings
                     'imgui-bundle',
                     "uharfbuzz",
                     'hsluv', 'pylinalg', 'jinja2', 'httpx', 'trimesh', 'gltflib', 'imageio',
-                    "https://pygfx--1273.org.readthedocs.build/1273/_static/pygfx-0.17.0-py3-none-any.whl"
+                    "https://pygfx--1273.org.readthedocs.build/1273/_static/pygfx-0.17.0-py3-none-any.whl" // couple of tweaks for fonts
                 ]);
                 await micropip.install("fastplotlib") // this one should be replaced by the wheel during docs build.
                 await pyodide.loadPackagesFromImports(pythonCode); // additional non pypi packages from the examples... like imageio (not patched...)
