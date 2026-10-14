@@ -144,7 +144,7 @@ You can also take a look at our [**Roadmap for 2026**](https://github.com/fastpl
 
 A special thanks to all of the `pygfx` developers and the amazing work they have done. 
 
-# Sponsors
+# Sponsors and Scientific Collaborators
 
 Fastplotlib is free and open source. We would like to thank the following institutions for helping to support fastplotlib over the past few years.
 
@@ -152,5 +152,6 @@ Fastplotlib is free and open source. We would like to thank the following instit
 - NYU & Flatiron Institute CCN, Williams lab & Chklovskii Lab
 - Duke University, Pearson Lab
 - Columbia University, Paninski lab
+- UT Southwestern Medical Center - Program in Memory Longevity
 
 We are always open to new sponsors that can help further develop and improve the library.
