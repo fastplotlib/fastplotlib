@@ -86,27 +86,24 @@ pyodide_compute_template = """
 </head>
 <base href="/">
 
-<dialog id="loading" style='outline: none; border: none; background: transparent;'>
-        <h1>Loading...</h1>
-    </dialog>
 <body>
     <a href="/">Back to list</a><br><br>
     <!-- TODO: can we get a rebuild and rerun this example button? like go to /build with a redirect or something? -->
     <p>
     {docstring}
     </p>
-    <canvas id='canvas' style='width:calc(90% - 40px); height:640px; background-color: #ddd;'></canvas>
+    <div id="canvas" class='renderview-wrapper is-resizable has-titlebar is-closable is-minimizable is-minimizable' style="width: 80%; height: 480px;">
+        <p id="loading"; style='width:100%; height:100%; background:#aaa; display: flex; justify-content: center; align-items: center; font-size:150%'>Loading ...</p>
+    </div>
     <div id="output" style="white-space: per-line; overflow-y: auto; height:300px; background:#eee; padding:4px; margin:4px; border:1px solid #ccc;">
         <p>Output:</p>
     </div>
     <script type="text/javascript">
         async function main() {{
             let loading = document.getElementById('loading');
-            loading.showModal();
             try {{
                 let example_name = {example_script!r};
                 pythonCode = await (await fetch(example_name)).text();
-                // this env var is really only used for the pygfx examples - so maybe we make a script for that gallery instead?
                 pyodide = await loadPyodide();
                 pyodide.setStdout({{
                     batched: (s) => {{
@@ -123,10 +120,9 @@ pyodide_compute_template = """
                 {dependencies}
                 await pyodide.loadPackagesFromImports(pythonCode);
                 // I feel like some errors around stack switching are worse now -.-
-                pyodide.setDebug(true);
+                //pyodide.setDebug(true);
                 let ret = await pyodide.runPythonAsync(pythonCode);
                 console.log("Example finished:", ret);
-                loading.close();
             }} catch (err) {{
                 // TODO: this could be formatted better as this overlaps and is unreadable...
                 loading.innerHTML = "Failed to load: " + err;
