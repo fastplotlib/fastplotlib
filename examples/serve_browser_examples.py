@@ -35,7 +35,8 @@ import fastplotlib
 wgpu_wheel = "wgpu-0.32.0-py3-none-any.whl"
 pygfx_wheel = "pygfx-0.17.0-py3-none-any.whl"
 
-rendercanvas_wheel = "rendercanvas-2.7.2-py3-none-any.whl" # still moved manually ...
+# rendercanvas_wheel = "rendercanvas-2.7.2-py3-none-any.whl" # still moved manually ...
+rendercanvas_wheel = "https://rendercanvas.readthedocs.io/latest/_static/rendercanvas-2.7.2-py3-none-any.whl"
 
 
 # the pygfx wheel will be listed after this. it might be possible to still get deps from pyproject.toml

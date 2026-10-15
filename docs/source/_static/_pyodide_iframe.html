@@ -39,7 +39,7 @@
                 await pyodide.loadPackage("micropip");
                 const micropip = pyodide.pyimport("micropip");
                 await micropip.install([
-                    'https://rendercanvas--258.org.readthedocs.build/258/_static/rendercanvas-2.7.2-py3-none-any.whl', // fixes to run_sync for right click menus
+                    'https://rendercanvas.readthedocs.io/latest/_static/rendercanvas-2.7.2-py3-none-any.whl', // fixes to run_sync for right click menus, not yet released on pypi
                     'https://wgpu-py--753.org.readthedocs.build/en/753/_static/wgpu-0.32.0-py3-none-any.whl', // WIP pyodide.ffi bindings
                     'imgui-bundle',
                     "uharfbuzz",
