@@ -89,7 +89,7 @@ iframe_placeholder_rst = """
 python_files = {}
 
 # I have a feeling this import might be really sketchy to have on CI... but hey - this is a hack for a hack
-from examples.server_browser_examples import patch_imageio_for_pyodide
+from examples.serve_browser_examples import patch_imageio_for_pyodide
 
 
 def add_pyodide_to_examples(app):
