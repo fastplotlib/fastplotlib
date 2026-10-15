@@ -28,6 +28,7 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = [
+    "build",
     "sphinx",
     "sphinx-gallery",
     "pydata-sphinx-theme",
