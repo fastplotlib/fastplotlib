@@ -28,6 +28,8 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = [
+    "build",
+    "flit",
     "sphinx",
     "sphinx-gallery",
     "pydata-sphinx-theme",
@@ -74,7 +76,7 @@ Repository = "https://github.com/fastplotlib/fastplotlib"
 # ===== Building
 
 [build-system]
-requires = ["flit_core >=3.2,<4"]
+requires = ["flit_core >=3.2,<5"]
 build-backend = "flit_core.buildapi"
 
 # ===== Tooling
