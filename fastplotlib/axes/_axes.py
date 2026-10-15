@@ -146,16 +146,32 @@ class Grids(pygfx.Group):
 
 
 class Ruler(pygfx.Ruler):
-    """pygfx.Ruler subclass that adds a rotated axis label."""
+    """pygfx.Ruler subclass that adds a rotated axis label and an extent."""
 
-    def __init__(self, *, color="#fff", alpha_mode=None, render_queue=None, **kwargs):
+    def __init__(
+        self,
+        *,
+        color="#fff",
+        alpha_mode=None,
+        render_queue=None,
+        extent: tuple[float, float] = (-np.inf, np.inf),
+        font_size: float = 12.0,
+        label_font_size: float = 20.0,
+        tick_label_offset: float = 5.0,
+        label_offset: float | None = None,
+        **kwargs,
+    ):
         super().__init__(
             color=color, alpha_mode=alpha_mode, render_queue=render_queue, **kwargs
         )
+        self.extent = extent
+        self.tick_label_offset = tick_label_offset
+        self.label_offset = label_offset
+        self.text.font_size = font_size
         self._label = pygfx.Text(
             screen_space=True,
             anchor="middle-center",
-            font_size=20,
+            font_size=label_font_size,
             material=pygfx.TextMaterial(
                 color=color,
                 alpha_mode="auto",
@@ -171,6 +187,75 @@ class Ruler(pygfx.Ruler):
     def label(self) -> pygfx.Text:
         """Axis label. Set text via ``label.set_text('label text')``"""
         return self._label
+
+    @property
+    def extent(self) -> tuple[float, float]:
+        """
+        The range of values the ruler is drawn over, ``(lo, hi)``. ``Axes.update`` applies it.
+
+        ``-np.inf`` and ``np.inf`` leave that end unbounded, the default. Ex: ``(0, np.inf)`` draws the ruler
+        from value 0 onwards only, i.e. the positive half of the axis.
+        """
+        return self._extent
+
+    @extent.setter
+    def extent(self, value: tuple[float, float]):
+        lo, hi = (float(v) for v in value)
+        if not lo < hi:
+            raise ValueError(
+                f"extent must be (lo, hi) with lo < hi, you passed: {value}"
+            )
+        self._extent = (lo, hi)
+
+    @property
+    def font_size(self) -> float:
+        """font size of the tick labels, in screen pixels"""
+        return self._text.font_size
+
+    @font_size.setter
+    def font_size(self, size: float):
+        self._text.font_size = float(size)
+
+    @property
+    def label_font_size(self) -> float:
+        """font size of the axis label, in screen pixels"""
+        return self._label.font_size
+
+    @label_font_size.setter
+    def label_font_size(self, size: float):
+        self._label.font_size = float(size)
+
+    @property
+    def tick_label_offset(self) -> float:
+        """
+        Gap between the tick marks and the tick labels, in screen pixels. Labels beside the line,
+        rather than above or below it, get twice this. Default 5, like pygfx.
+        """
+        return self._tick_label_offset
+
+    @tick_label_offset.setter
+    def tick_label_offset(self, offset: float):
+        self._tick_label_offset = float(offset)
+
+    @property
+    def label_offset(self) -> float | None:
+        """
+        Gap between the tick labels and the axis label, in screen pixels. ``None``, the default,
+        uses half the label font size where the label sits beside the tick labels and nothing
+        where it sits below them.
+        """
+        return self._label_offset
+
+    @label_offset.setter
+    def label_offset(self, offset: float | None):
+        self._label_offset = None if offset is None else float(offset)
+
+    def _calculate_text_anchor(self, angle):
+        super()._calculate_text_anchor(angle)
+        if self._text_anchor in ("bottom-center", "top-center"):
+            self._text_anchor_offset = self._tick_label_offset
+        else:
+            self._text_anchor_offset = 2 * self._tick_label_offset
 
     @property
     def color(self):
@@ -253,7 +338,10 @@ class Ruler(pygfx.Ruler):
         # but its top and bottom are the font's ascender and descender, which neither a tick
         # number nor most labels reach. that padding already separates the two where the offset is
         # vertical, so only add a gap to the extent that the offset is horizontal
-        gap_px = abs(px) * 0.5 * self._label.font_size
+        if self._label_offset is None:
+            gap_px = abs(px) * 0.5 * self._label.font_size
+        else:
+            gap_px = self._label_offset
 
         anchor_offset = max(tick_extent_px, 0.0) + gap_px
 
@@ -277,6 +365,12 @@ class Axes:
         "grids",
         "grid_kwargs",
         "auto_grid",
+        "x_kwargs",
+        "y_kwargs",
+        "z_kwargs",
+        "clip",
+        "padding",
+        "margins",
     )
     def __init__(
         self,
@@ -292,6 +386,9 @@ class Axes:
         grids: bool = True,
         grid_kwargs: dict = None,
         auto_grid: bool = True,
+        clip: bool = False,
+        padding: float = 4.0,
+        margins: tuple[float, float] | None = None,
         offset: np.ndarray = np.array([0.0, 0.0, 0.0]),
         basis: np.ndarray = np.array(
             [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
@@ -310,23 +407,9 @@ class Axes:
             color=color,
         )
 
-        x_kwargs = dict(
-            tick_side="right",
-            **generic_kwargs,
-            **x_kwargs,
-        )
-
-        y_kwargs = dict(
-            tick_side="left",
-            **generic_kwargs,
-            **y_kwargs,
-        )
-
-        z_kwargs = dict(
-            tick_side="left",
-            **generic_kwargs,
-            **z_kwargs,
-        )
+        x_kwargs = dict(tick_side="right", **generic_kwargs) | x_kwargs
+        y_kwargs = dict(tick_side="left", **generic_kwargs) | y_kwargs
+        z_kwargs = dict(tick_side="left", **generic_kwargs) | z_kwargs
 
         # create ruler for each dim
         self._x = Ruler(alpha_mode="solid", render_queue=RenderQueue.axes, **x_kwargs)
@@ -389,16 +472,18 @@ class Axes:
         # assumption that most interesting stuff is in front of the grid, and artifacts behind the grid are less
         # bad than those in front. Note that fully opaque objects blend perfectly fine with the grid. Artifacts
         # should only emerge for objects that have semi-transparent fragments.
-        grid_kwargs = dict(
-            alpha_mode="auto",
-            render_queue=RenderQueue.auto + 50,
-            major_step=10,
-            minor_step=1,
-            thickness_space="screen",
-            major_thickness=2,
-            minor_thickness=0.5,
-            infinite=True,
-            **grid_kwargs,
+        grid_kwargs = (
+            dict(
+                alpha_mode="auto",
+                render_queue=RenderQueue.auto + 50,
+                major_step=10,
+                minor_step=1,
+                thickness_space="screen",
+                major_thickness=2,
+                minor_thickness=0.5,
+                infinite=True,
+            )
+            | grid_kwargs
         )
 
         if grids:
@@ -430,6 +515,11 @@ class Axes:
 
         self._intersection = intersection
         self._auto_grid = auto_grid
+        self._clip = clip
+        self._padding = float(padding)
+        self._margins = None if margins is None else tuple(float(m) for m in margins)
+        self._corner = None
+        self._planes = []
 
         self._basis = None
         self.basis = basis
@@ -517,6 +607,69 @@ class Axes:
         self._auto_grid = value
 
     @property
+    def padding(self) -> float:
+        """gap between the tick labels and the edge of the subplot when the rulers sit in the corner, in pixels"""
+        return self._padding
+
+    @padding.setter
+    def padding(self, padding: float):
+        self._padding = float(padding)
+
+    @property
+    def margins(self) -> tuple[float, float]:
+        """
+        How far the tick and axis labels reach left of the y ruler and below the x ruler,
+        ``(left, bottom)`` in pixels. Measured from the text, or set to override the measurement,
+        ``None`` to measure again. With the rulers in the corner, the corner sits this far plus
+        ``padding`` from the edge of the subplot.
+        """
+        return self._get_label_margins()
+
+    @margins.setter
+    def margins(self, margins: tuple[float, float] | None):
+        self._margins = None if margins is None else tuple(float(m) for m in margins)
+
+    @property
+    def clip(self) -> bool:
+        """clip the graphics to the extents of the rulers"""
+        return self._clip
+
+    @clip.setter
+    def clip(self, value: bool):
+        self._clip = bool(value)
+        self._apply_clip()
+
+    def _apply_clip(self, graphics: tuple = None):
+        """set the clipping planes from the extents, and from the corner when the rulers sit there"""
+        planes = []
+        if self._clip:
+            rulers = (self.x, self.y, self.z)
+            scale = self._plot_area.camera.local.scale
+            for i, (normal, ruler, offset) in enumerate(
+                zip(CANONICAL_BAIS, rulers, self._offset)
+            ):
+                lo, hi = ruler.extent
+                if lo > -np.inf:
+                    planes.append((*normal, lo + offset))
+                if hi < np.inf:
+                    planes.append((*-normal, -(hi + offset)))
+                # the rulers start at the corner, keep the side of it the camera reads along
+                if self._corner is not None and i < 2:
+                    sign = 1.0 if scale[i] >= 0 else -1.0
+                    planes.append((*(sign * normal), sign * self._corner[i]))
+
+        if graphics is None:
+            if planes == self._planes:
+                return
+            graphics = self._plot_area.graphics
+        self._planes = planes
+
+        for graphic in graphics:
+            for wo in graphic.world_object.iter():
+                if wo.material is not None:
+                    wo.material.clipping_planes = planes
+
+    @property
     def visible(self) -> bool:
         """set visibility of all axes elements, rulers and grids"""
         return self._world_object.visible
@@ -562,6 +715,10 @@ class Axes:
             viewport.rect,
             viewport.logical_size,
             scale,
+            self._intersection,
+            (self.x.extent, self.y.extent, self.z.extent),
+            self._padding,
+            # last, update_using_camera unpacks the margins from the end of the tuple
             self._get_label_margins(),
         )
 
@@ -595,11 +752,13 @@ class Axes:
 
     def _get_label_margins(self) -> tuple[float, float]:
         """
-        How far the x and y tick labels, plus their axis labels, reach from their ruler, in pixels
+        How far the labels reach left of the y ruler and below the x ruler, ``(left, bottom)`` in pixels
 
         The fallbacks are for text that has not been laid out yet, which is the case until it has
         been drawn once.
         """
+        if self._margins is not None:
+            return self._margins
 
         x_blocks = [b for b in self.x.text._text_blocks if b._rect.height > 0]
         x_margin = (
@@ -620,7 +779,7 @@ class Axes:
         if self.y._label._text_blocks:
             y_margin += 1.5 * self.y._label.font_size
 
-        return x_margin, y_margin
+        return y_margin, x_margin
 
     def update_using_camera(self):
         """
@@ -640,7 +799,7 @@ class Axes:
         if state == self._last_state:
             # no changes in the camera, the viewport rect, or the size of the labels
             return
-        *_, (x_margin, y_margin) = state
+        *_, (left, bottom) = state
 
         if self._plot_area.camera.fov == 0:
             xpos, ypos, width, height = self._plot_area.viewport.rect
@@ -672,13 +831,17 @@ class Axes:
             # set ruler start and end positions based on scene bbox
             bbox = self._plot_area._fpl_graphics_scene.get_world_bounding_box()
 
+        self._corner = None
         if self.intersection is None:
             if self._plot_area.camera.fov == 0:
                 # put the rulers in the bottom left corner, clear of their own labels
-                padding = 4
+                padding = self._padding
                 intersection = self._plot_area.map_screen_to_world(
-                    (xpos + y_margin + padding, ypos + height - x_margin - padding)
+                    (xpos + left + padding, ypos + height - bottom - padding)
                 )
+                self._corner = intersection
+                # the rulers start at the corner, an L, nothing runs into the label margins
+                bbox[0, :2] = intersection[:2]
             else:
                 # force origin since None is not supported for Persepctive projections
                 self._intersection = (0, 0, 0)
@@ -689,6 +852,8 @@ class Axes:
             intersection = self.intersection
 
         self.update(bbox, intersection)
+        if self._clip:
+            self._apply_clip()
 
         self._last_state = state
 
@@ -723,6 +888,19 @@ class Axes:
             world_xmin, world_xmax = world_xmax, world_xmin
             self.x.tick_side = "left"
 
+        # clamp to the extent, an extent outside the bbox collapses the ruler to the nearer end
+        lo, hi = self.x.extent
+        world_xmin = min(max(world_xmin, lo + self.offset[0]), world_xmax)
+        world_xmax = max(min(world_xmax, hi + self.offset[0]), world_xmin)
+
+        lo, hi = self.y.extent
+        world_ymin = min(max(world_ymin, lo + self.offset[1]), world_ymax)
+        world_ymax = max(min(world_ymax, hi + self.offset[1]), world_ymin)
+
+        lo, hi = self.z.extent
+        world_zmin = min(max(world_zmin, lo + self.offset[2]), world_zmax)
+        world_zmax = max(min(world_zmax, hi + self.offset[2]), world_zmin)
+
         self.x.start_pos = world_xmin, world_y_10, world_z_10
         self.x.end_pos = world_xmax, world_y_10, world_z_10
 
@@ -750,6 +928,22 @@ class Axes:
             major_step_z = statsz["tick_step"]
 
         if self.grids:
+            # a finite grid is a unit square, placed and scaled onto the clamped ranges
+            dx = world_xmax - world_xmin
+            dy = world_ymax - world_ymin
+            dz = world_zmax - world_zmin
+            if not self.grids.xy.infinite:
+                self.grids.xy.local.scale = (dx, dy, 1)
+                self.grids.xy.local.position = (world_xmin, world_ymin, 0)
+
+            if self._plot_area.camera.fov != 0:
+                if not self.grids.xz.infinite:
+                    self.grids.xz.local.scale = (dx, dz, 1)
+                    self.grids.xz.local.position = (world_xmin, 0, world_zmin)
+                if not self.grids.yz.infinite:
+                    self.grids.yz.local.scale = (dz, dy, 1)
+                    self.grids.yz.local.position = (0, world_ymin, world_zmin)
+
             if self.auto_grid:
                 major_step_x, major_step_y = statsx["tick_step"], statsy["tick_step"]
                 self.grids.xy.major_step = major_step_x, major_step_y
