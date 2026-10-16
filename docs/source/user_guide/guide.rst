@@ -899,10 +899,12 @@ the argument, where ``init`` is the constructor::
     fpl.LineGraphic.config.init.thickness = 5.0
     fpl.ImageGraphic.config.init.cmap = "gray"
     fpl.Axes.config.init.grids = False
+    fpl.Axes.config.init.corner = True  # rulers stop at their intersection
     fpl.Figure.config.init.size = (900, 700)
     fpl.Figure.config.show.axes_visible = False
     fpl.layouts.Subplot.config.init.toolbar = False
     fpl.layouts.Subplot.config.auto_scale.zoom = 0.9
+    fpl.NDWidget.config.init.controls = False  # sliders without the playback controls
 
 Configurable components:
 
@@ -914,6 +916,8 @@ Configurable components:
 | ``fastplotlib.layouts.Subplot``                    | ``init``, ``auto_scale`` |
 +----------------------------------------------------+--------------------------+
 | ``fastplotlib.Axes``                               | ``init``                 |
++----------------------------------------------------+--------------------------+
+| ``fastplotlib.NDWidget``                           | ``init``                 |
 +----------------------------------------------------+--------------------------+
 | every ``Graphic``, ex. ``fastplotlib.LineGraphic`` | ``init``                 |
 +----------------------------------------------------+--------------------------+

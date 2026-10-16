@@ -120,6 +120,15 @@ increment used by the step buttons and by playback::
         names=["video", "ephys"],
     )
 
+The playback controls above each slider, i.e. play, step, stop, loop and framerate, can be left out so that the
+bottom of the widget is one labelled slider per dim, and the title bar of that window with them::
+
+    ndw = fpl.NDWidget(ranges={"time": (0.0, 600.0, 1 / 30)}, controls=False, title=None)
+
+    ndw.ui_sliders.controls = True  # bring them back
+
+This is also a global default, ``fpl.NDWidget.config.init.controls = False``, see :ref:`global_configuration`.
+
 Each array maps a slider position onto its own indices with ``slider_maps``. An array of reference values, such as
 the timestamp of every frame or sample, is used through its ``searchsorted``, and a callable can be given for any
 other mapping::

@@ -270,6 +270,7 @@ class Axes:
 
     @global_config.declare(
         "intersection",
+        "corner",
         "tick_size",
         "line_width",
         "tick_marker",
@@ -282,6 +283,7 @@ class Axes:
         self,
         plot_area,
         intersection: tuple[int, int, int] | None = None,
+        corner: bool = False,
         tick_size: float = 8.0,
         line_width: float = 2.0,
         tick_marker: str = "tick",
@@ -429,6 +431,7 @@ class Axes:
             self._grids = False
 
         self._intersection = intersection
+        self._corner = corner
         self._auto_grid = auto_grid
 
         self._basis = None
@@ -547,6 +550,23 @@ class Axes:
             )
 
         self._intersection = tuple(float(v) for v in intersection)
+
+    @property
+    def corner(self) -> bool:
+        """
+        Stop the rulers at their intersection so they form a corner, an L shape.
+
+        ``False`` (default) extends every ruler through the intersection to the edges of the view. ``True`` cuts
+        each ruler at the intersection and keeps its longer part, so with the default ``intersection=None`` the
+        x ruler runs from the bottom left corner of the view to the right and the y ruler from there upwards.
+        """
+        return self._corner
+
+    @corner.setter
+    def corner(self, value: bool):
+        self._corner = bool(value)
+        # redo the placement on the next render
+        self._last_state = None
 
     def _get_view_state(self) -> tuple:
         viewport = self._plot_area.viewport
@@ -705,6 +725,16 @@ class Axes:
             intersection point of the x, y, z ruler
 
         """
+
+        bbox = np.array(bbox, dtype=np.float64)
+
+        if self._corner:
+            # each ruler stops at the intersection and keeps its longer part
+            for dim, value in enumerate(intersection):
+                if abs(bbox[1, dim] - value) >= abs(value - bbox[0, dim]):
+                    bbox[0, dim] = value
+                else:
+                    bbox[1, dim] = value
 
         world_xmin, world_ymin, world_zmin = bbox[0]
         world_xmax, world_ymax, world_zmax = bbox[1]
