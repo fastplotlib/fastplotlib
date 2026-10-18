@@ -354,7 +354,7 @@ class Frame:
     def _imgui_size(self, location: str) -> int:
         """thickness in pixels reserved by the imgui edge window at ``location``, 0 if none"""
         window = self._imgui_windows.get(location)
-        return window.size if window is not None else 0
+        return window.size if window is not None and window.visible else 0
 
     def _set_imgui_rect(self, location: str, rect: tuple):
         """set the pixel rect of the imgui edge window at ``location``, if present"""
