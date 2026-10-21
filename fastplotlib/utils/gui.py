@@ -4,12 +4,13 @@ from pathlib import Path
 
 import wgpu
 
-# --- Prepare
+# The automatic backend selection of rendercanvas is resolved lazily, i.e. only when
+# ``RenderCanvas``, ``loop``, ``GUI_BACKEND`` etc. are first accessed, which in practice
+# is when a Figure is created without passing a canvas. This way fastplotlib can be
+# imported by applications that bring their own canvas (ex. offscreen) without requiring,
+# or importing, any GUI library.
 
-
-# Ultimately, we let wgpu-py decide, but we can prime things a bit to create our
-# own preferred order, by importing a Qt lib. But we only do this if no GUI has
-# been imported yet.
+from rendercanvas import BaseRenderCanvas
 
 # Qt libs that we will try to import
 qt_libs = ["PySide6", "PyQt6", "PySide2", "PyQt5"]
@@ -17,30 +18,86 @@ qt_libs = ["PySide6", "PyQt6", "PySide2", "PyQt5"]
 # Other known libs that, if imported, we should probably not try to force qt
 other_libs = ["glfw", "wx", "ipykernel"]
 
-already_imported = [name for name in (qt_libs + other_libs) if name in sys.modules]
-if not already_imported:
-    for name in qt_libs:
-        try:
-            importlib.import_module(name)
-        except Exception:
-            pass
-        else:
-            break
+# names that are resolved on first access by _select_backend()
+_LAZY_NAMES = (
+    "RenderCanvas",
+    "loop",
+    "GUI_BACKEND",
+    "IS_JUPYTER",
+    "QtCore",
+    "QtGui",
+    "QtWidgets",
+)
+
+_lazy_values = None
 
 
-# --- Triage
+def _select_backend() -> dict:
+    """Run the rendercanvas auto backend selection once, returns the lazily resolved names"""
+    global _lazy_values
+
+    if _lazy_values is not None:
+        return _lazy_values
+
+    # --- Prepare
+
+    # Ultimately, we let rendercanvas decide, but we can prime things a bit to create our
+    # own preferred order, by importing a Qt lib. But we only do this if no GUI has
+    # been imported yet.
+    already_imported = [name for name in (qt_libs + other_libs) if name in sys.modules]
+    if not already_imported:
+        for name in qt_libs:
+            try:
+                importlib.import_module(name)
+            except Exception:
+                pass
+            else:
+                break
+
+    # --- Triage
+
+    # Let rendercanvas do the auto gui selection
+    from rendercanvas.auto import RenderCanvas, loop
+
+    # Get the name of the backend ('qt', 'glfw', 'jupyter')
+    gui_backend = RenderCanvas.__module__.split(".")[-1]
+
+    values = {
+        "RenderCanvas": RenderCanvas,
+        "loop": loop,
+        "GUI_BACKEND": gui_backend,
+        "IS_JUPYTER": gui_backend == "anywidget",
+    }
+
+    # --- Some backend-specific preparations
+
+    if gui_backend == "anywidget":
+        _notebook_print_banner()
+
+    elif gui_backend == "qt":
+        from rendercanvas.qt import libname
+
+        # Import submodules of PySide6/PyQt6/PySid2/PyQt5
+        # For the way that fpl uses Qt, the supported Qt libs seems compatible enough.
+        # If necessary we can do some qtpy-like monkey-patching here.
+        values["QtCore"] = importlib.import_module(".QtCore", libname)
+        values["QtGui"] = importlib.import_module(".QtGui", libname)
+        values["QtWidgets"] = importlib.import_module(".QtWidgets", libname)
+
+    _lazy_values = values
+    return values
 
 
-# Let wgpu do the auto gui selection
-from rendercanvas import BaseRenderCanvas
-from rendercanvas.auto import RenderCanvas, loop
+def __getattr__(name):
+    if name in _LAZY_NAMES:
+        values = _select_backend()
+        if name in values:
+            return values[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-# Get the name of the backend ('qt', 'glfw', 'jupyter')
-GUI_BACKEND = RenderCanvas.__module__.split(".")[-1]
-IS_JUPYTER = GUI_BACKEND == "anywidget"
 
-
-# --- Some backend-specific preparations
+def __dir__():
+    return sorted(list(globals().keys()) + list(_LAZY_NAMES))
 
 
 def _notebook_print_banner():
@@ -117,17 +174,3 @@ def _notebook_print_banner():
     # display logo and adapters table
     display(image)
     display(HTML(table_str))
-
-
-if GUI_BACKEND == "anywidget":
-    _notebook_print_banner()
-
-elif GUI_BACKEND == "qt":
-    from rendercanvas.qt import libname
-
-    # Import submodules of PySide6/PyQt6/PySid2/PyQt5
-    # For the way that fpl uses Qt, the supported Qt libs seems compatible enough.
-    # If necessary we can do some qtpy-like monkey-patching here.
-    QtCore = importlib.import_module(".QtCore", libname)
-    QtGui = importlib.import_module(".QtGui", libname)
-    QtWidgets = importlib.import_module(".QtWidgets", libname)
