@@ -1,7 +1,5 @@
 from ._version import __version__, version_info
 
-# this must be the first import for auto-canvas detection
-from .utils import loop  # noqa
 from .utils import (
     global_config,
     enums,
@@ -54,3 +52,13 @@ if len(enumerate_adapters()) < 1:
         f"https://fastplotlib.readthedocs.io/en/latest/user_guide/gpu.html\n",
         RuntimeWarning,
     )
+
+
+def __getattr__(name):
+    # the rendercanvas loop is resolved lazily, so that importing fastplotlib
+    # does not trigger the auto GUI backend selection, see utils/gui.py
+    if name == "loop":
+        from .utils import gui
+
+        return gui.loop
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -6,7 +6,8 @@ import numpy as np
 import pygfx
 from pygfx import WgpuRenderer, Texture
 
-from ..utils.gui import BaseRenderCanvas, RenderCanvas
+from ..utils import gui
+from ..utils.gui import BaseRenderCanvas
 
 try:
     import imgui_bundle
@@ -31,7 +32,8 @@ def make_canvas_and_renderer(
     """
 
     if canvas is None:
-        canvas = RenderCanvas(**canvas_kwargs)
+        # auto GUI backend selection only happens here, when no canvas is provided
+        canvas = gui.RenderCanvas(**canvas_kwargs)
     elif isinstance(canvas, str):
         import rendercanvas
 

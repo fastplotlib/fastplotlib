@@ -1,5 +1,4 @@
-# this MUST be imported as early as possible in fpl.__init__ before any other wgpu stuff
-from .gui import loop
+from . import gui
 from .enums import *
 from . import types
 from .functions import *
@@ -12,3 +11,10 @@ from .protocols import (
     CudaArrayProtocol,
 )
 from ._video_writer import VideoWriter
+
+
+def __getattr__(name):
+    # the rendercanvas loop is resolved lazily, see gui.py
+    if name == "loop":
+        return gui.loop
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
