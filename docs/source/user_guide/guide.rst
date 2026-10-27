@@ -56,6 +56,7 @@ make it easy and intuitive to produce interactive visualizations that are as per
 Before giving a detailed overview of the library, here is a minimal example::
 
     import fastplotlib as fpl
+    from rendercanvas.auto import loop
     import imageio.v3 as iio
 
     # create a `Figure`
@@ -71,7 +72,7 @@ Before giving a detailed overview of the library, here is a minimal example::
     fig.show()
 
     if __name__ == "__main__":
-        fpl.loop.run()
+        loop.run()
 
 .. image:: ../_static/guide_hello_world.png
 

@@ -9,6 +9,7 @@ Example showing color slice for scatter plot.
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 from sklearn import datasets
 
 
@@ -36,4 +37,4 @@ scatter.colors[::2] = "blue"
 
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

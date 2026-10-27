@@ -14,6 +14,7 @@ Use while monitoring VRAM usage with nvidia-smi
 from typing import Literal
 import numpy as np
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 from fastplotlib.ui import ImguiWindow
 from imgui_bundle import imgui
 
@@ -80,8 +81,8 @@ figure.add_imgui_window(ui, location="right", size=200, title="UI")
 figure.show()
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

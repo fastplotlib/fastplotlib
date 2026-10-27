@@ -10,6 +10,7 @@ A TextGraphic that labels a point on a line and another TextGraphic that moves a
 
 import numpy as np
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 
 # create a sinc wave
 xs = np.linspace(-2 * np.pi, 2 * np.pi, 200)
@@ -77,8 +78,8 @@ figure[0, 0].axes.visible = False
 figure.show(maintain_aspect=False)
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

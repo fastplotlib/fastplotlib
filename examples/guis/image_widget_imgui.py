@@ -13,6 +13,7 @@ from scipy.ndimage import gaussian_filter
 import imageio.v3 as iio
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 
 # subclass from EdgeWindow to make a custom ImGUI Window to place inside the figure!
 from fastplotlib.ui import ImguiWindow
@@ -75,8 +76,8 @@ iw.figure.add_imgui_window(gui, size=200, location="right", title="Gaussian Filt
 figure = iw.figure
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

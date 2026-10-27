@@ -10,6 +10,7 @@ An example with polygons.
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import numpy as np
 from cmap import Colormap
 
@@ -54,8 +55,8 @@ figure[0, 0].add_polygon(triangle_data, colors="m")
 figure.show()
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

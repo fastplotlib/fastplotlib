@@ -11,6 +11,7 @@ to display a slice of the volume. We can share the data buffer on the GPU betwee
 
 from imgui_bundle import imgui
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 from fastplotlib.ui import ImguiWindow
 import imageio.v3 as iio
 from skimage.filters import gaussian
@@ -68,8 +69,8 @@ figure.add_imgui_window(gui, location="right", size=200, title="change data buff
 figure.show()
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

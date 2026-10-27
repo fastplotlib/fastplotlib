@@ -11,6 +11,7 @@ plots a line to show these mappings.
 
 import numpy as np
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 
 figure = fpl.Figure(size=(700, 560))
 
@@ -87,4 +88,4 @@ figure.add_animations(update_text)
 
 figure.show()
 
-fpl.loop.run()
+loop.run()

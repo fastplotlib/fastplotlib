@@ -11,6 +11,7 @@ button to move both selectors to the clicked location.
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 from imageio import v3 as iio
 
 image_data = iio.imread("imageio:coins.png")
@@ -67,8 +68,8 @@ for subplot in figure:
     subplot.camera.zoom = 0.5
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

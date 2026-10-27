@@ -1,5 +1,3 @@
-# this MUST be imported as early as possible in fpl.__init__ before any other wgpu stuff
-from .gui import loop
 from .enums import *
 from . import types
 from .functions import *
@@ -12,3 +10,4 @@ from .protocols import (
     CudaArrayProtocol,
 )
 from ._video_writer import VideoWriter
+

@@ -9,6 +9,7 @@ Example showing animation with a scatter plot.
 # sphinx_gallery_pygfx_docs = 'animate'
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import numpy as np
 
 # create a random distribution of 10,000 xyz coordinates
@@ -54,8 +55,8 @@ subplot_scatter.add_animations(cycle_colors)
 figure.show()
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

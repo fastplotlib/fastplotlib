@@ -10,6 +10,7 @@ Animate scatter sizes
 
 import numpy as np
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 
 xs = np.linspace(0, 10 * np.pi, 1_000)
 # sine wave
@@ -40,8 +41,8 @@ figure[0, 0].add_animations(update_sizes)
 figure.show(maintain_aspect=False)
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

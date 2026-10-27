@@ -9,6 +9,7 @@ Example showing data slice for scatter plot.
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import numpy as np
 from sklearn import datasets
 
@@ -34,4 +35,4 @@ scatter.data[50:100:2] = scatter.data[100:150:2] + np.array([1, 1, 0])
 
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

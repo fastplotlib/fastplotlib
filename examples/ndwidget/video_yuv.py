@@ -18,6 +18,7 @@ zoom into an edge where the color changes rapidly over space to see the differen
 # sphinx_gallery_pygfx_docs = 'code'
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 from asyncvideo import AsyncVideoReader
 from imageio.core import Request
 
@@ -61,8 +62,8 @@ ndw.show()
 figure = ndw.figure
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

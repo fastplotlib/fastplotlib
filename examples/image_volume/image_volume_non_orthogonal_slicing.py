@@ -12,6 +12,7 @@ For an example with UI sliders see the "Volume modes" example.
 
 import numpy as np
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import imageio.v3 as iio
 
 
@@ -49,8 +50,8 @@ figure.show()
 figure[0, 0].camera.set_state(state)
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

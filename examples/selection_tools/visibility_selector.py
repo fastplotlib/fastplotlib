@@ -15,6 +15,7 @@ from functools import partial
 import numpy as np
 from scipy.ndimage import binary_erosion
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import cmap as cmap_lib
 
 n_t = 500
@@ -183,4 +184,4 @@ def image_clicked(session, ev):
 ndw.show()
 figure = ndw.figure
 
-fpl.loop.run()
+loop.run()

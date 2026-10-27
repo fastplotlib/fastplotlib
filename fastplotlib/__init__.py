@@ -1,7 +1,5 @@
 from ._version import __version__, version_info
 
-# this must be the first import for auto-canvas detection
-from .utils import loop  # noqa
 from .utils import (
     global_config,
     enums,

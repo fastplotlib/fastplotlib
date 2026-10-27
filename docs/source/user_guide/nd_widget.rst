@@ -210,10 +210,12 @@ Desktop, notebooks and remote
 
 The same code runs everywhere. A script or application can use Qt, glfw, or wx::
 
+    from rendercanvas.auto import loop
+
     ndw.show()
 
     if __name__ == "__main__":
-        fpl.loop.run()
+        loop.run()
 
 In a notebook, such as Jupyter, marimo or VS Code, ``ndw.show()`` as the last line of a cell puts the widget in the
 output cell. Remote rendering can also be streamed over http. With ``uvicorn`` installed, the address is printed when

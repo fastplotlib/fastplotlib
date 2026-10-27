@@ -10,6 +10,7 @@ NDWidget timeseries example with colormaps and transforms, can be useful for thi
 
 import numpy as np
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 
 # generate some toy timeseries data
 n_datapoints = 100_000  # number of datapoints per line
@@ -81,8 +82,8 @@ subplot2.controller.add_camera(subplot3.camera, include_state={"x", "width"})
 subplot3.controller.add_camera(subplot2.camera, include_state={"x", "width"})
 subplot3.controller.add_camera(subplot.camera, include_state={"x", "width"})
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

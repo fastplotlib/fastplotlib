@@ -10,6 +10,7 @@ Example showing how to use a `PolygonSelector` (a.k.a. lasso selector) with line
 
 import numpy as np
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 from itertools import product
 
 # create a figure
@@ -65,4 +66,4 @@ figure.show()
 # please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

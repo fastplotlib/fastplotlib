@@ -9,6 +9,7 @@ Simple example of adding event handlers for line data and thickness.
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import numpy as np
 
 figure = fpl.Figure(size=(700, 560))
@@ -72,8 +73,8 @@ sine.data[30:70, 1] = np.ones(40)
 # that causes the sine graphic's thickness to also be set from this value
 cosine.thickness = 10
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

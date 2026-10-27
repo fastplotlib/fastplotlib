@@ -9,6 +9,7 @@ Example showing the simple plot creation followed by changing the vmin/vmax with
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import imageio.v3 as iio
 
 figure = fpl.Figure(size=(700, 560))
@@ -23,8 +24,8 @@ figure.show()
 image.vmin = 0.5
 image.vmax = 0.75
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

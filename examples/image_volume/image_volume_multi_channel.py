@@ -10,6 +10,7 @@ Example with multi-channel volume images. Use alpha_mode "add" for additive blen
 # sphinx_gallery_pygfx_docs = 'code'
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 from ome_zarr.io import parse_url
 from ome_zarr.reader import Reader
 
@@ -41,8 +42,8 @@ vol_ch1 = figure[0, 0].add_image_volume(voldata[1], cmap="magenta", alpha_mode="
 figure.show()
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

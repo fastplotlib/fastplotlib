@@ -10,6 +10,7 @@ Use one controller for all subplots.
 
 import numpy as np
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 
 
 xs = np.linspace(0, 2 * np.pi, 100)
@@ -23,8 +24,8 @@ for subplot in figure:
 figure.show(maintain_aspect=False)
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

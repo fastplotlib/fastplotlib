@@ -62,8 +62,11 @@ with open(API_DIR.joinpath("fastplotlib.rst"), "w") as f:
         
         ".. autofunction:: fastplotlib.print_wgpu_report\n\n"
         
-        "fastplotlib.loop\n"
-        "------------------\n"
+        "Event loop\n"
+        "----------\n"
+        "fastplotlib does not select a GUI backend or event loop on import. When a ``Figure`` is created "
+        "without a ``canvas``, ``rendercanvas.auto`` selects one, and its loop is run with "
+        "``from rendercanvas.auto import loop; loop.run()``. "
         "See the rendercanvas docs: https://rendercanvas.readthedocs.io/stable/api.html#rendercanvas.BaseLoop "
     )
 

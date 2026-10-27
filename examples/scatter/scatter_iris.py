@@ -9,6 +9,7 @@ Example showing scatter plot using sklearn iris dataset.
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn import datasets
@@ -45,8 +46,8 @@ scatter.cmap_range = (0, scatter.cmap.num_colors)
 figure.show()
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

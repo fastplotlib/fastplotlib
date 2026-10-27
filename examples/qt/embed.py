@@ -12,6 +12,7 @@ frame that can be updated using a QSlider.
 
 from PyQt6 import QtWidgets, QtCore
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import imageio.v3 as iio
 
 
@@ -60,7 +61,7 @@ main_window.resize(video.shape[2], video.shape[1])
 main_window.show()
 
 # execute Qt app
-fpl.loop.run()
+loop.run()
 
 # You can also use Qt interactively/in a non-blocking manner in notebooks and ipython
-# by using %gui qt and NOT calling `fpl.loop.run()`, see the user guide for more details
+# by using %gui qt and NOT calling `loop.run()`, see the user guide for more details

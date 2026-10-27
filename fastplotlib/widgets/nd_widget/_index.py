@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from ._ndwidget import NDWidget
     from ._base import NDGraphic
 
-from ...utils import loop
 from ._async import run_sync
 
 
@@ -364,6 +363,8 @@ class ReferenceIndices:
             # task handed to the scheduler is never picked up and the graphic never updates
             run_sync(ndg._set_indices_())
             return
+
+        from rendercanvas.auto import loop
 
         task_name = f"ndw-fetch:{type(ndg).__name__}"
         if ndg.name is not None:

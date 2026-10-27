@@ -11,6 +11,7 @@ the species and cluster label of the point that is being hovered by the mouse po
 
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 from sklearn.cluster import AgglomerativeClustering
 from sklearn import datasets
 
@@ -60,4 +61,4 @@ figure.show()
 
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

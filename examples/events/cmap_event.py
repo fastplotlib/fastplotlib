@@ -13,6 +13,7 @@ This also shows how bidirectional events are supported.
 
 import numpy as np
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import imageio.v3 as iio
 
 # load images
@@ -68,8 +69,8 @@ for subplot in figure:
 # change the cmap of graphic image, triggers all other graphics to set the cmap
 figure["camera"].graphics[0].cmap = "jet"
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

@@ -56,8 +56,8 @@ How a ``Figure`` is displayed depends on where you are running it:
 
 * **jupyterlab**: ``figure.show()`` must be the last line of a notebook cell, or be wrapped in
   ``IPython.display.display()``.
-* **applications, scripts, and most other use-cases**: call ``fastplotlib.loop.run()`` after ``figure.show()`` to start
-  the event loop. It blocks, so it is not used in jupyterlab or IPython.
+* **applications, scripts, and most other use-cases**: call ``loop.run()`` after ``figure.show()`` to start
+  the event loop, with ``from rendercanvas.auto import loop``. It blocks, so it is not used in jupyterlab or IPython.
 * **an interactive Qt window from jupyterlab or IPython**: run ``%gui qt`` before importing ``fastplotlib``.
 
 ``maintain_aspect=False`` lets the x, y, and z scales change independently. Use it when the data in each dimension are

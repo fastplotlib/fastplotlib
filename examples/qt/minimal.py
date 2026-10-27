@@ -13,6 +13,7 @@ Minimal PyQt example that displays an image.
 # import Qt or PySide
 from PyQt6 import QtWidgets
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import imageio.v3 as iio
 
 img = iio.imread("imageio:astronaut.png")
@@ -30,7 +31,7 @@ qwidget.resize(*img.shape[:2])
 
 # execute Qt app
 # if this is part of a larger Qt QApplication, you can also call app.exec() where app is the QApplication instance
-fpl.loop.run()
+loop.run()
 
 # You can also use Qt interactively/in a non-blocking manner in notebooks and ipython
 # by using %gui qt and NOT calling `fpl.run()`, see the user guide for more details

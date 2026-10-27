@@ -11,6 +11,7 @@ Once called, it effects all subsequent Figures/graphic objects that the style se
 
 import numpy as np
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 
 # white background, black axes, dark graphic colors
 fpl.style.light()
@@ -32,8 +33,8 @@ figure[1, 0].add_scatter(data)
 figure.show()
 
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()

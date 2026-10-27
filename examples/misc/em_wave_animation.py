@@ -9,6 +9,7 @@ Example showing animation of an electromagnetic wave.
 # sphinx_gallery_pygfx_docs = 'animate 8s'
 
 import fastplotlib as fpl
+from rendercanvas.auto import loop
 import numpy as np
 
 figure = fpl.Figure(
@@ -108,8 +109,8 @@ figure[0, 0].axes.auto_grid = False
 figure[0, 0].add_animations(tick)
 print(figure[0, 0]._fpl_graphics_scene.children)
 
-# NOTE: fpl.loop.run() should not be used for interactive sessions
+# NOTE: loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
-    fpl.loop.run()
+    loop.run()
