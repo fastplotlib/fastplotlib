@@ -767,7 +767,7 @@ class Figure:
         return self._output
 
     def close(self):
-        if self._recording:
+        if self.recording:
             self.stop_recording()
         self._output.close()
         if self._sidecar:
