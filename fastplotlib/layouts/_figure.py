@@ -19,7 +19,7 @@ from ._utils import (
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
-from ..graphics import GraphicCollection, ImageGraphic, ImageYUVGraphic
+from ..graphics import ImageGraphic, ImageYUVGraphic
 from ..utils import global_config, VideoWriter
 
 
@@ -951,13 +951,10 @@ class Figure:
 
     def _fpl_canvas_closed(self, *ev):
         """
-        Clear numpy object arrays that contain reference cycles that
-        Python's cycle garbage collector cannot see.
+        Delete all graphics and clear the subplots numpy object array, which contains
+        reference cycles that Python's cycle garbage collector cannot see.
         """
-        for subplot in self._subplots.ravel():
-            for graphic in subplot.graphics:
-                if isinstance(graphic, GraphicCollection):
-                    graphic._graphics[...] = None
+        self.clear()
         self._subplots[...] = None
 
     def _fpl_reset_layout(self, *ev):
