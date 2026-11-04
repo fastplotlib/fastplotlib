@@ -36,11 +36,15 @@ WorldObjectID: TypeAlias = int
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
-WORLD_OBJECTS: dict[HexStr, pygfx.WorldObject] = dict()  #: {hex id str: WorldObject}
+WORLD_OBJECTS: weakref.WeakValueDictionary[HexStr, pygfx.WorldObject] = (
+    weakref.WeakValueDictionary()
+)  #: {hex id str: WorldObject}
 
 # maps world object to the graphic which owns it, useful when manually picking from the renderer and we
 # need to know the graphic associated with the target world object
-WORLD_OBJECT_TO_GRAPHIC: dict[WorldObjectID, Graphic] = dict()
+WORLD_OBJECT_TO_GRAPHIC: weakref.WeakValueDictionary[WorldObjectID, Graphic] = (
+    weakref.WeakValueDictionary()
+)
 
 
 PYGFX_EVENTS = [
@@ -290,9 +294,11 @@ class Graphic:
     def world_object(self) -> pygfx.WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
         # We use weakref to simplify garbage collection
-        return weakref.proxy(WORLD_OBJECTS[hex(id(self))])
+        return weakref.proxy(self._fpl_world_object)
 
     def _set_world_object(self, wo: pygfx.WorldObject):
+        # the graphic owns its world object, user code only gets proxies through `world_object`
+        self._fpl_world_object = wo
         WORLD_OBJECTS[self._fpl_address] = wo
 
         # add to world object -> graphic mapping

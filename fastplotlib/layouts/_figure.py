@@ -489,6 +489,9 @@ class Figure:
 
         self._video_writer: VideoWriter | None = None
 
+        # registered last, so that it is never called on a partially initialized Figure
+        canvas.add_event_handler(self._fpl_canvas_closed, "close")
+
     @property
     def shape(self) -> list[tuple[int, int, int, int]] | tuple[int, int]:
         """Only for grid layouts of subplots: [n_rows, n_cols]"""
@@ -764,7 +767,7 @@ class Figure:
         return self._output
 
     def close(self):
-        if self._recording:
+        if self.recording:
             self.stop_recording()
         self._output.close()
         if self._sidecar:
@@ -945,6 +948,14 @@ class Figure:
             snapshot = self.export_numpy(rgb=rgb)
 
             return iio.imwrite(uri, snapshot, **kwargs)
+
+    def _fpl_canvas_closed(self, *ev):
+        """
+        Delete all graphics and clear the subplots numpy object array, which contains
+        reference cycles that Python's cycle garbage collector cannot see.
+        """
+        self.clear()
+        self._subplots[...] = None
 
     def _fpl_reset_layout(self, *ev):
         """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""

@@ -1,3 +1,6 @@
+import gc
+import weakref
+
 import numpy as np
 import pytest
 
@@ -230,3 +233,68 @@ def test_subplot_names():
 
     with pytest.raises(ValueError):
         fpl.Figure(shape=(2, 3), names=["1", None, "3", "4", None, "6", "7"])
+
+
+def _add_line(subplot):
+    subplot.add_line(np.random.rand(100, 2).astype(np.float32))
+
+
+def _add_line_with_selectors(subplot):
+    line = subplot.add_line(np.random.rand(100, 2).astype(np.float32))
+    line.add_linear_selector()
+    line.add_linear_region_selector()
+
+
+def _add_scatter(subplot):
+    subplot.add_scatter(np.random.rand(100, 2).astype(np.float32))
+
+
+def _add_image(subplot):
+    subplot.add_image(np.random.rand(64, 64).astype(np.float32))
+
+
+def _add_line_collection(subplot):
+    subplot.add_line_collection(np.random.rand(5, 100, 2).astype(np.float32))
+
+
+def _add_text(subplot):
+    subplot.add_text("hello")
+
+
+@pytest.mark.parametrize(
+    "add_graphics",
+    [
+        None,
+        _add_line,
+        _add_line_with_selectors,
+        _add_scatter,
+        _add_image,
+        _add_line_collection,
+        _add_text,
+    ],
+)
+@pytest.mark.parametrize(
+    "figure_kwargs",
+    [{}, {"shape": (2, 2)}, {"rects": [(0, 0, 0.5, 1), (0.5, 0, 0.5, 1)]}],
+)
+def test_closed_figure_is_garbage_collected(add_graphics, figure_kwargs):
+    fig = fpl.Figure(canvas="offscreen", **figure_kwargs)
+    if add_graphics is not None:
+        for subplot in fig:
+            add_graphics(subplot)
+        # delete the subplot loop variable to prevent it keeping the last subplot alive
+        del subplot
+    fig.show()
+    fig.canvas.draw()
+
+    fig_ref = weakref.ref(fig)
+    subplot_refs = [weakref.ref(subplot) for subplot in fig]
+    graphic_refs = [weakref.ref(g) for subplot in fig for g in subplot.objects]
+
+    fig.canvas.close()
+    del fig
+    gc.collect()
+
+    assert fig_ref() is None
+    assert all(ref() is None for ref in subplot_refs)
+    assert all(ref() is None for ref in graphic_refs)
