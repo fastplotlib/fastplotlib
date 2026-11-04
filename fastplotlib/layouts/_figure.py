@@ -19,7 +19,7 @@ from ._utils import (
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
-from ..graphics import ImageGraphic, ImageYUVGraphic
+from ..graphics import GraphicCollection, ImageGraphic, ImageYUVGraphic
 from ..utils import global_config, VideoWriter
 
 
@@ -489,6 +489,9 @@ class Figure:
 
         self._video_writer: VideoWriter | None = None
 
+        # registered last, so that it is never called on a partially initialized Figure
+        canvas.add_event_handler(self._fpl_canvas_closed, "close")
+
     @property
     def shape(self) -> list[tuple[int, int, int, int]] | tuple[int, int]:
         """Only for grid layouts of subplots: [n_rows, n_cols]"""
@@ -945,6 +948,17 @@ class Figure:
             snapshot = self.export_numpy(rgb=rgb)
 
             return iio.imwrite(uri, snapshot, **kwargs)
+
+    def _fpl_canvas_closed(self, *ev):
+        """
+        Clear numpy object arrays that contain reference cycles that
+        Python's cycle garbage collector cannot see.
+        """
+        for subplot in self._subplots.ravel():
+            for graphic in subplot.graphics:
+                if isinstance(graphic, GraphicCollection):
+                    graphic._graphics[...] = None
+        self._subplots[...] = None
 
     def _fpl_reset_layout(self, *ev):
         """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
