@@ -529,8 +529,36 @@ class ImguiWindow(ImguiBase):
 
         imgui.dummy(imgui.ImVec2(win_width, box_size.y))
 
+    @property
+    def _imgui_name(self) -> str:
+        """the name imgui knows this window by while docked, the id keeps it unique"""
+        return f"{self._title or self._location}##{self._id_counter}"
+
+    def _draw_docked(self):
+        """a figure-level edge window while the figure docks: imgui places it and draws its tab"""
+        flags = self._window_flags & ~(
+            imgui.WindowFlags_.no_title_bar
+            | imgui.WindowFlags_.no_resize
+            | imgui.WindowFlags_.no_collapse
+            | imgui.WindowFlags_.no_bring_to_front_on_focus
+        )
+        if imgui.begin(self._imgui_name, p_open=None, flags=flags)[0]:
+            imgui.push_id(self._id_counter)
+            for update_call in self._update_calls:
+                update_call()
+            imgui.pop_id()
+        imgui.end()
+
     def draw(self):
         """helps simplify using imgui by managing window creation & position, and pushing/popping the ID"""
+        if (
+            self._subplot is None
+            and self._location in EDGES
+            and self._figure.imgui_docking
+        ):
+            self._draw_docked()
+            return
+
         # window position & size
         if self._floating:
             # floating windows are auto-sized by imgui, only set the initial position

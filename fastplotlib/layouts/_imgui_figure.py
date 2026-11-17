@@ -68,6 +68,11 @@ class ImguiFigure(Figure):
 
         self._right_click_press_pos: imgui.ImVec2 = None
 
+        # docking: edge windows are dockable imgui windows, the plots take the dock space's central node
+        self._imgui_docking = False
+        self._dock_built = False
+        self._dock_area: tuple[int, int, int, int] = None
+
         super().__init__(
             shape=shape,
             rects=rects,
@@ -154,7 +159,62 @@ class ImguiFigure(Figure):
         # needs to be here else events don't get processed
         self.canvas.request_draw()
 
+    @property
+    def imgui_docking(self) -> bool:
+        """Return true if edge windows are dockable, i.e. can be dragged to any edge, tabbed, or floated"""
+        return self._imgui_docking
+
+    @imgui_docking.setter
+    def imgui_docking(self, value: bool):
+        self._imgui_docking = bool(value)
+        io = self.imgui_renderer.backend.io
+        if self._imgui_docking:
+            io.config_flags |= imgui.ConfigFlags_.docking_enable
+        else:
+            io.config_flags &= ~imgui.ConfigFlags_.docking_enable
+        self._dock_built = False
+        self._dock_area = None
+        self._fpl_reset_layout()
+
+    def _draw_dock_space(self):
+        """submit the dock space, dock the edge windows on the first frame, and give the plots the central node"""
+        dock_id = imgui.dock_space_over_viewport(
+            flags=imgui.DockNodeFlags_.passthru_central_node
+        )
+
+        if not self._dock_built:
+            # each split takes its share of the node left over by the splits before it
+            width, height = self.canvas.get_logical_size()
+            center = dock_id
+            for edge, direction, extent in (
+                ("top", imgui.Dir.up, height),
+                ("bottom", imgui.Dir.down, height - self._edge_size("top")),
+                ("left", imgui.Dir.left, width),
+                ("right", imgui.Dir.right, width - self._edge_size("left")),
+            ):
+                window = self._edge_windows[edge]
+                if window is None:
+                    continue
+                ratio = min(0.9, window.size / max(1, extent))
+                _, node, center = imgui.internal.dock_builder_split_node_py(
+                    center, direction, ratio
+                )
+                imgui.internal.dock_builder_dock_window(window._imgui_name, node)
+            imgui.internal.dock_builder_finish(dock_id)
+            self._dock_built = True
+
+        node = imgui.internal.dock_builder_get_central_node(dock_id)
+        area = tuple(
+            round(v) for v in (node.pos.x, node.pos.y, node.size.x, node.size.y)
+        )
+        if area != self._dock_area:
+            self._dock_area = area
+            self._fpl_reset_layout()
+
     def _draw_imgui(self) -> imgui.ImDrawData:
+        if self._imgui_docking:
+            self._draw_dock_space()
+
         # figure-level windows: edge windows then floating windows
         for window in (*self._edge_windows.values(), *self._floating_windows):
             if window is None:
@@ -419,6 +479,10 @@ class ImguiFigure(Figure):
             x_pos, y_pos, width, height
 
         """
+
+        if self._imgui_docking and self._dock_area is not None:
+            x, y, width, height = self._dock_area
+            return x, y, max(1, width), max(1, height)
 
         width, height = self.canvas.get_logical_size()
 
