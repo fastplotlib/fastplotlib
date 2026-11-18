@@ -61,6 +61,8 @@ class ImguiFigure(Figure):
         # edge windows reserve canvas space, keyed by location; floating windows draw over the plots
         self._edge_windows: dict[str, ImguiWindow] = {loc: None for loc in EDGES}
         self._floating_windows: list[ImguiWindow] = []
+        # docking: further windows added to an occupied edge, they dock as tabs beside its edge window
+        self._edge_tabs: dict[str, list[ImguiWindow]] = {loc: [] for loc in EDGES}
 
         # figure level right-click popup, and the popup opened by the most recent right-click
         self._imgui_right_click: ImguiPopup = None
@@ -183,6 +185,7 @@ class ImguiFigure(Figure):
         )
 
         if not self._dock_built:
+            imgui.internal.dock_builder_remove_node_child_nodes(dock_id)
             # each split takes its share of the node left over by the splits before it
             width, height = self.canvas.get_logical_size()
             center = dock_id
@@ -199,7 +202,8 @@ class ImguiFigure(Figure):
                 _, node, center = imgui.internal.dock_builder_split_node_py(
                     center, direction, ratio
                 )
-                imgui.internal.dock_builder_dock_window(window._imgui_name, node)
+                for tab in (window, *self._edge_tabs[edge]):
+                    imgui.internal.dock_builder_dock_window(tab._imgui_name, node)
             imgui.internal.dock_builder_finish(dock_id)
             self._dock_built = True
 
@@ -216,7 +220,16 @@ class ImguiFigure(Figure):
             self._draw_dock_space()
 
         # figure-level windows: edge windows then floating windows
-        for window in (*self._edge_windows.values(), *self._floating_windows):
+        for window in (
+            *self._edge_windows.values(),
+            *(
+                tab
+                for tabs in self._edge_tabs.values()
+                for tab in tabs
+                if self._imgui_docking
+            ),
+            *self._floating_windows,
+        ):
             if window is None:
                 continue
             self._layout_imgui_window(window)
@@ -358,7 +371,12 @@ class ImguiFigure(Figure):
                 raise ValueError(
                     f"must provide `size` for an edge window, location: {location}"
                 )
-            self._edge_windows[location] = window
+            if self._imgui_docking and self._edge_windows[location] is not None:
+                self._edge_tabs[location].append(window)
+            else:
+                self._edge_windows[location] = window
+            # a new window has no place in the dock space yet, lay it out again
+            self._dock_built = False
             self._fpl_reset_layout()
 
         elif window._floating or window._rect_manager is not None:
