@@ -58,8 +58,8 @@ class VolumeCursor:
 
         # subplot -> (axes shown on its x and y, group of the two lines, pointer handler)
         self._subplots: dict[Subplot, tuple[tuple[str, str], pygfx.Group, Callable]] = dict()
-        # volume graphic -> {axis: slice graphic}, {axis: outline}
-        self._volumes: dict[ImageVolumeGraphic, tuple[dict, dict]] = dict()
+        # volume graphic -> ({axis: slice graphic}, {axis: outline}, volume event handler)
+        self._volumes: dict[ImageVolumeGraphic, tuple[dict, dict, Callable]] = dict()
 
         self._handlers: list[Callable] = list()
         # subplot -> screen position of the last pointer press inside it
@@ -104,7 +104,7 @@ class VolumeCursor:
         self._visible = bool(value)
         for _axes, lines, _handler in self._subplots.values():
             lines.visible = self._visible
-        for slices, outlines in self._volumes.values():
+        for slices, outlines, _handler in self._volumes.values():
             for graphic in slices.values():
                 graphic.visible = self._visible
             for outline in outlines.values():
@@ -188,7 +188,8 @@ class VolumeCursor:
         Show three orthogonal slices through the cursor inside a volume, each outlined in its axis color.
 
         The slices share the volume's data buffer and follow its ``vmin``, ``vmax`` and ``cmap``. The volume
-        stops writing depth so the slices inside it stay visible.
+        stops writing depth so the slices inside it stay visible. Deleting the volume from its subplot also
+        removes it from the cursor.
 
         Parameters
         ----------
@@ -229,15 +230,19 @@ class VolumeCursor:
             subplot.scene.add(outline)
             outlines[axis] = outline
 
-        for feature in ("vmin", "vmax", "cmap"):
-            volume.add_event_handler(partial(self._volume_feature_changed, slices), feature)
+        handler = partial(self._volume_event, volume)
+        volume.add_event_handler(handler, "vmin", "vmax", "cmap", "deleted")
 
-        self._volumes[volume] = (slices, outlines)
+        self._volumes[volume] = (slices, outlines, handler)
         self._update()
 
     def remove_volume(self, volume: ImageVolumeGraphic):
         """remove a volume and delete its slices"""
-        slices, outlines = self._volumes.pop(volume)
+        volume.remove_event_handler(self._volumes[volume][2], "vmin", "vmax", "cmap", "deleted")
+        self._delete_slices(volume)
+
+    def _delete_slices(self, volume: ImageVolumeGraphic):
+        slices, outlines, _handler = self._volumes.pop(volume)
         subplot = volume._plot_area
         for graphic in slices.values():
             subplot.delete_graphic(graphic)
@@ -294,7 +299,7 @@ class VolumeCursor:
             line_v.local.x = position[axes[0]]
             line_h.local.y = position[axes[1]]
 
-        for volume, (slices, outlines) in self._volumes.items():
+        for volume, (slices, outlines, _handler) in self._volumes.items():
             bbox = volume.world_object.get_world_bounding_box()  # [[xmin, ymin, zmin], [xmax, ymax, zmax]]
             for axis, graphic in slices.items():
                 # slice planes are in world space: ax + by + cz + d = 0
@@ -309,8 +314,14 @@ class VolumeCursor:
                 outlines[axis].geometry.positions.data[:] = corners
                 outlines[axis].geometry.positions.update_full()
 
-    def _volume_feature_changed(self, slices: dict, ev):
-        for graphic in slices.values():
+    def _volume_event(self, volume: ImageVolumeGraphic, ev):
+        if ev.type == "deleted":
+            # NOTE: the volume clears its own handlers after this event, removing one now would
+            # mutate the handler list while it is being iterated
+            self._delete_slices(volume)
+            return
+
+        for graphic in self._volumes[volume][0].values():
             setattr(graphic, ev.type, ev.info["value"])
 
     def _pointer_event(self, subplot: Subplot, ev: pygfx.PointerEvent):

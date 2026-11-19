@@ -91,3 +91,28 @@ def test_bad_axes_raise(axes):
     fig, volume = make_figure()
     with pytest.raises(ValueError):
         fpl.VolumeCursor().add_subplot(fig[0, 0], axes=axes)
+
+
+def test_remove_volume_removes_its_event_handlers():
+    fig, volume = make_figure()
+    cursor = fpl.VolumeCursor()
+    cursor.add_volume(volume)
+    slices = cursor.slices(volume)
+    cursor.remove_volume(volume)
+
+    volume.vmin = 0.3
+    assert all(graphic.vmin != pytest.approx(0.3) for graphic in slices.values())
+
+
+def test_deleting_the_volume_removes_it_from_the_cursor():
+    fig, volume = make_figure()
+    cursor = fpl.VolumeCursor()
+    cursor.add_volume(volume)
+    n_scene_children = len(fig[0, 2].scene.children)
+
+    fig[0, 2].delete_graphic(volume)
+
+    assert volume not in cursor._volumes
+    assert len(fig[0, 2].graphics) == 0
+    assert len(fig[0, 2].scene.children) == n_scene_children - 3
+    cursor.position = (1, 2, 3)
